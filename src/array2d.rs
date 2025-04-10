@@ -30,6 +30,13 @@ impl<T: Default + Clone + PartialEq> Array2d<T> {
         self.size = size;
     }
 
+    pub fn clear(&mut self) {
+        self.data.clear();
+        self.size = Coord(0, 0);
+    }
+
+    pub fn get_size(&self) -> Coord { self.size }
+
     pub fn access(&self, co: Coord) -> &T {
         &self.data[(co.x() * self.size.w() + co.y()) as usize]
     }
@@ -55,8 +62,16 @@ impl<T: Default + Clone + PartialEq> Array2d<T> {
 
     pub fn len(&self) -> usize { self.data.len() }
 
-    pub fn enumerate_mut(&mut self) -> Array2dIter<T> {
+    pub fn enumerate(&mut self) -> Array2dIter<T> {
         Array2dIter {
+            size: self.size,
+            data: self.data.iter(),
+            co: Coord(0, 0),
+        }
+    }
+
+    pub fn enumerate_mut(&mut self) -> Array2dIterMut<T> {
+        Array2dIterMut {
             size: self.size,
             data: self.data.iter_mut(),
             co: Coord(0, 0),
@@ -102,6 +117,12 @@ impl<T: Default + Clone + PartialEq> Array2d<T> {
 
 // Iterators vvvvvv
 pub struct Array2dIter<'a, T: Default + Clone + PartialEq + 'a> {
+    data: std::slice::Iter<'a, T>,
+    co: Coord<usize>,
+    size: Coord<usize>,
+}
+
+pub struct Array2dIterMut<'a, T: Default + Clone + PartialEq + 'a> {
     data: std::slice::IterMut<'a, T>,
     co: Coord<usize>,
     size: Coord<usize>,
@@ -114,6 +135,21 @@ pub struct Array2dRowIter<'a, T: Default + Clone + PartialEq> {
 }
 
 impl<'a, T: Default + Clone + PartialEq + 'a> Iterator for Array2dIter<'a, T> {
+    type Item = (Coord, &'a T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.co.y() >= self.size.h() { // if wrapped around, goto next row
+            self.co.1 = 0;
+            self.co.0 += 1;
+        }
+        let Some(result) = self.data.next() else { return None; }; 
+        let result = (self.co, result);
+        self.co.1 += 1;
+        Some(result)
+    }
+}
+
+impl<'a, T: Default + Clone + PartialEq + 'a> Iterator for Array2dIterMut<'a, T> {
     type Item = (Coord, &'a mut T);
 
     fn next(&mut self) -> Option<Self::Item> {

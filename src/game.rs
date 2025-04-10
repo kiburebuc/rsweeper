@@ -17,13 +17,13 @@ impl Cell {
 
     pub fn force_mine(&mut self) { self.0 = 10 }
     pub fn toggle_flag(&mut self) { self.2 = !self.2 }
-    pub fn dig(&mut self) { self.1 = !self.1 }
+    pub fn dig(&mut self) { if self.dug() { panic!(); } self.1 = true; }
     pub fn assign(&mut self, i: u8) { self.0 = i; }
 }
 
 #[derive(Default)]
 pub struct Game {
-    grid: Array2d<Cell>,
+    pub grid: Array2d<Cell>,
     score: usize,
 }
 
@@ -39,7 +39,8 @@ impl Game {
             for cell in row {
                 //print!("{} ", cell.print());
                 if !cell.dug() {
-                    print!("o "); 
+                    if cell.flagged() { print!("p "); 
+                    } else { print!("o "); }
                 } else if cell.is_zero() {
                     print!("  ");
                 } else {
@@ -48,7 +49,7 @@ impl Game {
             }
             println!(" {}", to_ascii(y));  
         }
-        println!("");  
+        println!("{}", self.score);  
     }
 
     pub fn get_score(&self) -> usize { self.score }
@@ -56,31 +57,27 @@ impl Game {
     pub fn resize(&mut self, w: usize, h: usize) {
         self.grid.resize(Coord(w, h));
         self.score = w * h;
+        println!("{}", self.score);  
     }
 
-    pub fn generate_mines(&mut self, num: usize, safe: Coord) {
-        if num > self.grid.len() { return; }
-        let mut num = num;
-        self.score -= num;
-        while num > 0 {
-            let coord = self.get_random_spot();
-            if safe == coord || self.grid.access(coord).dug() { continue; } 
-            self.grid.access_mut(coord).force_mine();
-            num -= 1;
-        }
+    pub fn generate_mines(&mut self, nums: usize, safe: Coord) {
+        if nums > self.grid.len() { return; }
+        self.score -= nums;
+            let mut num = nums;
+            while num > 0 {
+                let coord = self.get_random_spot();
+                if safe == coord || self.grid.access(coord).dug() { continue; } 
+                self.grid.access_mut(coord).force_mine();
+                num -= 1;
+            }
 
-        let data = self.grid.clone();
-
-        println!("precomping");
-
-        //precompute numbers
-        for (coord, cell) in self.grid.enumerate_mut() {
-            if cell.is_mine() { continue; }
-            let result = data.get_surround_match(Coord::from(coord), Cell::is_mine);
-            println!("{}, {} is not a mine! {result}", coord.x(), coord.y());
-            cell.assign(result);
-        }
-        println!("done precomp!");
+            let data = self.grid.clone();
+            //precompute numbers
+            for (coord, cell) in self.grid.enumerate_mut() {
+                if cell.is_mine() { continue; }
+                let result = data.get_surround_match(Coord::from(coord), Cell::is_mine);
+                cell.assign(result);
+            }
     }
 
     fn get_random_spot(&self) -> Coord {
@@ -96,15 +93,15 @@ impl Game {
             self.grid.access_mut(Coord::from(co)).toggle_flag();
             return false;
         }
+        if spot.flagged() { return false; }
         if spot.is_mine() { return true; }
-        println!("attempting to dig {co:?}");        
         self.flood_dig(co);
         false
     }
 
     fn flood_dig(&mut self, co: Coord<isize>) {
         let Some(spot) = self.grid.safe_access(co) else { return; };
-        if spot.dug() { return; }
+        if spot.dug() || spot.is_mine() { return; }
         self.grid.access_mut(Coord::from(co)).dig();
         self.score -= 1;
         if self.grid.access(Coord::from(co)).get_num() != 0 { return; }
@@ -115,10 +112,19 @@ impl Game {
             }
         }
     }
+
+    pub fn get_size(&self) -> Coord { self.grid.get_size() }
+
+    pub fn reset(&mut self) {
+        let size = self.grid.get_size();
+        self.grid.clear();
+        self.grid.resize(size);
+        self.score = size.mul();
+    }
 }
 
-fn to_ascii(i: usize) -> char { 
-    char::from_digit(i as u32, 10).unwrap()
+fn to_ascii(_i: usize) -> char { 
+    '-'
 }
 
 pub fn from_ascii(c: char) -> usize {
