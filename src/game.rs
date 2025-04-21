@@ -62,11 +62,11 @@ impl Game {
 
     pub fn generate_mines(&mut self, nums: usize, safe: Coord) {
         if nums > self.grid.len() { return; }
-        self.score -= nums;
             let mut num = nums;
+            self.score -= num;
             while num > 0 {
                 let coord = self.get_random_spot();
-                if safe == coord || self.grid.access(coord).dug() { continue; } 
+                if safe == coord || self.grid.access(coord).is_mine() { continue; } 
                 self.grid.access_mut(coord).force_mine();
                 num -= 1;
             }
@@ -119,7 +119,7 @@ impl Game {
         let size = self.grid.get_size();
         self.grid.clear();
         self.grid.resize(size);
-        self.score = size.mul();
+        self.score = size.x() * size.y();
     }
 }
 
