@@ -1,6 +1,6 @@
 pub use crate::array2d::Coord;
 use crate::array2d::Array2d;
-use rand::prelude::*;
+use macroquad::rand;
 
 //base type, 1-9 are precomped numbers, 10 is mine, 11 is flagged
 // <0 means undug, >0 means dug
@@ -61,6 +61,7 @@ impl Game {
     }
 
     pub fn generate_mines(&mut self, nums: usize, safe: Coord) {
+        rand::srand(macroquad::miniquad::date::now() as _);
         if nums > self.grid.len() { return; }
             let mut num = nums;
             self.score -= num;
@@ -81,8 +82,8 @@ impl Game {
     }
 
     fn get_random_spot(&self) -> Coord {
-        let mut rng = rand::rng();
-        Coord(rng.random_range(0..self.grid.width()), rng.random_range(0..self.grid.height()))
+        Coord(rand::gen_range(0, self.grid.width()), 
+            rand::gen_range(0, self.grid.height()))
     }
 
     pub fn action(&mut self, co: Coord<isize>, flag: bool) -> bool {
@@ -125,11 +126,4 @@ impl Game {
 
 fn to_ascii(_i: usize) -> char { 
     '-'
-}
-
-pub fn from_ascii(c: char) -> usize {
-    match c {
-        '0'..='9' => c as usize - 48,
-        _ => 0,
-    }
 }

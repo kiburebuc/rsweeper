@@ -1,0 +1,3 @@
+add draw cell function that properly draws tiles matching origrinal game
+add ui menu to select parameters (mines, dimensions)
+
