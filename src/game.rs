@@ -60,11 +60,16 @@ impl Game {
         println!("{}", self.score);  
     }
 
-    pub fn generate_mines(&mut self, nums: usize, safe: Coord) {
+    pub fn generate_mines(&mut self, nums: usize, safe: Coord) -> bool {
         rand::srand(macroquad::miniquad::date::now() as _);
-        if nums > self.grid.len() { return; }
+        if nums > self.grid.len() { return false; }
+        if !self.grid.in_bounds(Coord::from(safe)) { return false; }
+
+        self.grid.access_mut(safe).assign(1);
+        while !self.grid.access(safe).is_zero() {
+            self.reset();
             let mut num = nums;
-            self.score -= num;
+            self.score -= nums;
             while num > 0 {
                 let coord = self.get_random_spot();
                 if safe == coord || self.grid.access(coord).is_mine() { continue; } 
@@ -79,6 +84,8 @@ impl Game {
                 let result = data.get_surround_match(Coord::from(coord), Cell::is_mine);
                 cell.assign(result);
             }
+        }
+        true
     }
 
     fn get_random_spot(&self) -> Coord {

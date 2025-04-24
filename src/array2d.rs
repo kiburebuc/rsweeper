@@ -38,7 +38,7 @@ impl<T: Default + Clone + PartialEq> Array2d<T> {
     pub fn get_size(&self) -> Coord { self.size }
 
     pub fn access(&self, co: Coord) -> &T {
-        &self.data[(co.x() * self.size.w() + co.y()) as usize]
+        &self.data[(co.y() * self.size.w() + co.x()) as usize]
     }
 
     pub fn safe_access(&self, co: Coord<isize>) -> Option<&T> {
@@ -53,7 +53,7 @@ impl<T: Default + Clone + PartialEq> Array2d<T> {
     }
 
     pub fn access_mut(&mut self, co: Coord<usize>) -> &mut T {
-        &mut self.data[(co.x() * self.size.w() + co.y()) as usize]
+        &mut self.data[(co.y() * self.size.w() + co.x()) as usize]
     }
     
     pub fn get_row(&self, y: usize) -> &[T] {
@@ -138,13 +138,13 @@ impl<'a, T: Default + Clone + PartialEq + 'a> Iterator for Array2dIter<'a, T> {
     type Item = (Coord, &'a T);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.co.y() >= self.size.h() { // if wrapped around, goto next row
-            self.co.1 = 0;
-            self.co.0 += 1;
+        if self.co.x() >= self.size.w() { // if wrapped around, goto next row
+            self.co.0 = 0;
+            self.co.1 += 1;
         }
         let Some(result) = self.data.next() else { return None; }; 
         let result = (self.co, result);
-        self.co.1 += 1;
+        self.co.0 += 1;
         Some(result)
     }
 }
@@ -153,13 +153,13 @@ impl<'a, T: Default + Clone + PartialEq + 'a> Iterator for Array2dIterMut<'a, T>
     type Item = (Coord, &'a mut T);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.co.y() >= self.size.h() { // if wrapped around, goto next row
-            self.co.1 = 0;
-            self.co.0 += 1;
+        if self.co.x() >= self.size.w() { // if wrapped around, goto next row
+            self.co.0 = 0;
+            self.co.1 += 1;
         }
         let Some(result) = self.data.next() else { return None; }; 
         let result = (self.co, result);
-        self.co.1 += 1;
+        self.co.0 += 1;
         Some(result)
     }
 }
