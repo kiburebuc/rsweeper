@@ -1,20 +1,22 @@
-use num_traits::Num;
-use num_traits::cast::AsPrimitive;
-
 #[derive(Clone, PartialEq, Default, Copy, Debug)]
-pub struct Coord<T: Num = usize>(pub T, pub T);
+pub struct Coord<T = usize>(pub T, pub T);
 
-impl<T: Num + Copy> Coord<T> {
+impl<T: Copy> Coord<T> {
     pub fn x(&self) -> T { self.0 }
     pub fn y(&self) -> T { self.1 }
     pub fn w(&self) -> T { self.0 }
     pub fn h(&self) -> T { self.1 }
-    pub fn mul(&self) -> T { self.0 * self.1 }
 }
 
-impl<T: Copy + Num + 'static> Coord<T> {
-    pub fn from<F: AsPrimitive<T> + Num>(co: Coord<F>) -> Coord<T> {
-        Coord(co.0.as_(), co.1.as_())
+impl From<Coord<isize>> for Coord {
+    fn from(co: Coord<isize>) -> Coord {
+        Coord(co.0 as usize, co.1 as usize)
+    }
+}
+
+impl From<Coord<usize>> for Coord<isize> {
+    fn from(co: Coord<usize>) -> Coord<isize> {
+        Coord(co.0 as isize, co.1 as isize)
     }
 }
 
@@ -26,7 +28,7 @@ pub struct Array2d<T: Default + Clone + PartialEq> {
 
 impl<T: Default + Clone + PartialEq> Array2d<T> {
     pub fn resize(&mut self, size: Coord) {
-        self.data.resize_with(size.mul(), Default::default);
+        self.data.resize_with(size.0 * size.1, Default::default);
         self.size = size;
     }
 
@@ -43,7 +45,7 @@ impl<T: Default + Clone + PartialEq> Array2d<T> {
 
     pub fn safe_access(&self, co: Coord<isize>) -> Option<&T> {
         if self.in_bounds(co) {
-            Some(self.access(Coord::from(co)))
+            Some(self.access(co.into()))
         } else { None }
     }
 
@@ -62,7 +64,7 @@ impl<T: Default + Clone + PartialEq> Array2d<T> {
 
     pub fn len(&self) -> usize { self.data.len() }
 
-    pub fn enumerate(&mut self) -> Array2dIter<T> {
+    pub fn enumerate(&self) -> Array2dIter<T> {
         Array2dIter {
             size: self.size,
             data: self.data.iter(),

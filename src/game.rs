@@ -63,7 +63,7 @@ impl Game {
     pub fn generate_mines(&mut self, nums: usize, safe: Coord) -> bool {
         rand::srand(macroquad::miniquad::date::now() as _);
         if nums > self.grid.len() { return false; }
-        if !self.grid.in_bounds(Coord::from(safe)) { return false; }
+        if !self.grid.in_bounds(safe.into()) { return false; }
 
         self.grid.access_mut(safe).assign(1);
         while !self.grid.access(safe).is_zero() {
@@ -81,7 +81,7 @@ impl Game {
             //precompute numbers
             for (coord, cell) in self.grid.enumerate_mut() {
                 if cell.is_mine() { continue; }
-                let result = data.get_surround_match(Coord::from(coord), Cell::is_mine);
+                let result = data.get_surround_match(coord.into(), Cell::is_mine);
                 cell.assign(result);
             }
         }
