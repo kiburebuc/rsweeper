@@ -49,7 +49,7 @@ impl Game {
             }
             println!(" {}", to_ascii(y));  
         }
-        println!("{}", self.score);  
+        println!("score: {}", self.score);  
     }
 
     pub fn get_score(&self) -> usize { self.score }
@@ -57,7 +57,6 @@ impl Game {
     pub fn resize(&mut self, w: usize, h: usize) {
         self.grid.resize(Coord(w, h));
         self.score = w * h;
-        println!("{}", self.score);  
     }
 
     pub fn generate_mines(&mut self, nums: usize, safe: Coord) -> bool {

@@ -4,14 +4,13 @@ mod array2d;
 mod game;
 mod rsweeper;
 mod widget;
+mod window;
 
-use rsweeper::{Rsweeper};
+use rsweeper::Rsweeper;
+use window::Window;
 use widget::*;
 
-
-
 const ASPRAT: f32 = 16. / 9.;
-
 
 fn conf() -> Conf {
     Conf {
@@ -37,10 +36,12 @@ async fn main() {
     */
    
     //initalize
-    let mut mouse = None;
+    let mut mouse = Mouse::None;
     let bg = Texture2D::from_file_with_format(include_bytes!("bliss.png"), None);
 
-    let mut win = Rsweeper::default();
+    let mut win = Window::<Rsweeper>::default();
+    win.set_size((158., 239.).into());
+    win.app.game.game.resize(8, 8);
 
     loop {
         let max = f32::max(screen_width(), screen_height() * ASPRAT);
@@ -48,17 +49,21 @@ async fn main() {
             dest_size: Some(vec2(max, max / ASPRAT)), ..Default::default()
         }); //bliss bg
 
-
-        win.draw();
-        
-        if is_mouse_button_released(MouseButton::Left) {
-            mouse = Some((mouse_position(), false));
-        } else if is_mouse_button_released(MouseButton::Right) {
-            mouse = Some((mouse_position(), true));
+        if is_mouse_button_down(MouseButton::Left) {
+            mouse = Mouse::Drag(mouse_position().into(), false);
+        } else if is_mouse_button_down(MouseButton::Right) {
+            mouse = Mouse::Drag(mouse_position().into(), true);
+        } else {
+            match mouse {
+                Mouse::Drag(p, b) => { mouse = Mouse::Released(p, b) },
+                Mouse::Released(_, _) => { mouse = Mouse::None },
+                Mouse::None => {},
+            }
         }
-
-        win.update(mouse);
-        mouse = None;
+        
+        *win.mouse_mut() = mouse;
+        win.update();
+        win.draw();
 
         next_frame().await
     }
